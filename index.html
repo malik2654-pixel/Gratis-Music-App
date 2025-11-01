@@ -1,252 +1,199 @@
-<!--
-Project: Gratis - Free Music & Lyrics (YouTube-powered)
-Files included: index.html, manifest.json, service-worker.js
-Instructions (phone-friendly):
-1) Create a new Repl -> Choose "HTML, CSS, JS" ->
-2) Replace the default index.html with the index.html block below.
-3) Create manifest.json and service-worker.js files and paste their blocks below.
-4) Get a YouTube Data API v3 key from Google Cloud Console and paste it into the API_KEY variable inside index.html.
-5) Run the Repl. Use the Replit public URL with PWABuilder to make an installable APK (optional).
-
-Notes:
-- This app uses YouTube embeds to play full songs legally. Follow YouTube TOS. Do not host copyrighted MP3s directly.
-- The app shows 1 ad per day using localStorage logic. When AdSense is approved paste the ad snippet inside the #ad div.
-
--- ========================= index.html ========================= --><!doctype html>
-
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Gratis — Free Music</title>
-  <link rel="manifest" href="manifest.json">
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js')
-        .then(() => console.log('Service Worker registered!'))
-        .catch((error) => console.log('Service Worker registration failed:', error));
-    }
-  </script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="manifest" href="/manifest.json">
-  <style>
-    body{background:#0f1416;color:#fff;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:10px}
-    .play-btn{background:#1DB954;color:#000;padding:8px 12px;border-radius:8px;font-weight:600}
-    .modal{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:50}
-    .modal-content{width:95%;max-width:900px;background:#000;border-radius:12px;padding:12px}
-    #ad{display:none}
-    /* audio-only: hide visible video but keep playback via iframe (iframe must remain in DOM) */
-    #ytplayer{width:100%;height:0;opacity:0;pointer-events:none}
-    /* small player controls area */
-    .player-bar{position:fixed;left:12px;right:12px;bottom:12px;background:#0b0d0e;padding:10px;border-radius:14px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(0,0,0,0.6)}
-    .player-art{width:48px;height:48px;border-radius:8px}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gratis Music</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+            width: 100%;
+            border-radius: 12px;
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .song-list-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Two columns */
+            gap: 15px;
+        }
+        .song-item {
+            background-color: #282828;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .song-item:hover {
+            background-color: #3a3a3a;
+        }
+        .song-title {
+            font-weight: bold;
+            margin: 0;
+        }
+        .song-channel {
+            font-size: 0.9em;
+            color: #b3b3b3;
+            margin-top: 5px;
+        }
+        .preferences-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            text-align: center;
+        }
+        .preferences-box {
+            background-color: #282828;
+            padding: 30px;
+            border-radius: 12px;
+        }
+        .preferences-box h2 {
+            margin-top: 0;
+        }
+        .genre-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        .genre-btn {
+            background-color: #1db954;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        /* Responsive layout for larger screens */
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row;
+            }
+            .video-container {
+                flex: 2; /* Takes up 2/3 of the space */
+                height: auto;
+                padding-bottom: 0;
+                position: sticky;
+                top: 20px;
+            }
+            .song-list-container {
+                flex: 1; /* Takes up 1/3 of the space */
+                display: flex;
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 <body>
-  <header class="p-4 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <div class="text-2xl font-bold">🎧 Gratis</div>
-      <div class="text-sm text-gray-400">Free • 1 ad/day</div>
-    </div>
-    <div class="w-1/3">
-      <input id="searchInput" class="w-full bg-gray-900 text-white rounded-md p-2" placeholder="Search artist, song or album..." />
-    </div>
-  </header>  <main class="p-4 pb-28">
-    <div id="ad" class="w-full bg-gray-800 p-3 rounded-md text-center mb-4">
-      <!-- Paste AdSense snippet here once approved -->
-      <div class="text-sm text-gray-300">Advertisement</div>
-    </div><section id="results" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></section>
 
-  </main>  <!-- Player Modal (audio-only iframe hidden) -->  <div id="playerModal" style="display:none" class="modal">
-    <div class="modal-content">
-      <div class="flex justify-between items-center mb-2">
-        <div>
-          <div id="modalTitle" class="font-bold text-lg">Title</div>
-          <div id="modalArtist" class="text-sm text-gray-400">Artist</div>
+    <div id="preferencesOverlay" class="preferences-overlay" style="display: none;">
+        <div class="preferences-box">
+            <h2>What's your vibe?</h2>
+            <p>Choose a genre to get started.</p>
+            <div class="genre-buttons">
+                <button class="genre-btn" onclick="selectPreference('Lofi Hip Hop')">Lofi</button>
+                <button class="genre-btn" onclick="selectPreference('Bollywood Hits')">Bollywood</button>
+                <button class="genre-btn" onclick="selectPreference('Indie India')">Indie</button>
+                <button class="genre-btn" onclick="selectPreference('Pop Music')">Pop</button>
+            </div>
         </div>
-        <div>
-          <button id="closeModal" class="text-gray-300">Close</button>
+    </div>
+
+    <div class="container">
+        <div class="video-container">
+            <iframe id="videoPlayer" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
         </div>
-      </div><div style="position:relative;padding-top:56.25%">
-    <!-- Hidden iframe plays full YouTube video but is visually hidden to create audio-only UX -->
-    <iframe id="ytplayer" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-  </div>
-
-  <div class="mt-3 flex gap-3">
-    <button id="lyricsBtn" class="text-sm px-3 py-2 bg-gray-800 rounded">Toggle Lyrics</button>
-    <a id="openYoutube" target="_blank" class="text-sm px-3 py-2 bg-gray-800 rounded">Open on YouTube</a>
-  </div>
-
-  <div id="lyricsBox" class="mt-3 p-3 bg-gray-900 rounded" style="display:none;max-height:320px;overflow:auto"></div>
-</div>
-
-  </div>  <!-- Small bottom player bar -->  <div id="playerBar" class="player-bar" style="display:none">
-    <img id="barArt" src="" class="player-art" />
-    <div style="flex:1">
-      <div id="barTitle" class="font-semibold">Not playing</div>
-      <div id="barArtist" class="text-xs text-gray-400">—</div>
+        <div id="songList" class="song-list-container">
+            <!-- Song items will be inserted here by JavaScript -->
+        </div>
     </div>
-    <div>
-      <button id="openPlayerBtn" class="play-btn">Open</button>
-    </div>
-  </div>  <script>
-    // ====== CONFIG ======
-    const API_KEY = 'AIzaSyANPsMp-6jzO3wectka_kmhQCuevFE0Nyw'; // <<< put YouTube Data pp
-    // ====== END CONFIG ======
 
-    // 1 ad per day logic
-    (function(){
-      try{
-        const last = localStorage.getItem('lastAdShown');
-        const today = new Date().toDateString();
-        if(last !== today){
-          document.getElementById('ad').style.display = 'block';
-          localStorage.setItem('lastAdShown', today);
-          // hide after 12 seconds automatically
-          setTimeout(()=>document.getElementById('ad').style.display = 'none', 12000);
-        } else {
-          document.getElementById('ad').style.display = 'none';
+    <script>
+        const apiKey = 'YOUR_API_KEY_HERE'; // Replace with your actual API key
+
+        function searchYouTube(query) {
+            fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10&q=${query}&type=video&key=${apiKey}`)
+                .then(response => response.json())
+                .then(data => {
+                    const songList = document.getElementById('songList');
+                    songList.innerHTML = '';
+                    if (data.items && data.items.length > 0) {
+                        // Set the first video to play automatically
+                        const firstVideoId = data.items[0].id.videoId;
+                        playVideo(firstVideoId);
+
+                        data.items.forEach(item => {
+                            const videoId = item.id.videoId;
+                            const title = item.snippet.title;
+                            const channel = item.snippet.channelTitle;
+
+                            const songItem = document.createElement('div');
+                            songItem.className = 'song-item';
+                            songItem.onclick = () => playVideo(videoId);
+                            songItem.innerHTML = `
+                                <p class="song-title">${title}</p>
+                                <p class="song-channel">${channel}</p>
+                            `;
+                            songList.appendChild(songItem);
+                        });
+                    }
+                })
+                .catch(error => console.error('API Error:', error));
         }
-      }catch(e){console.warn(e)}
-    })();
 
-    const results = document.getElementById('results');
-    const searchInput = document.getElementById('searchInput');
+        function playVideo(videoId) {
+            const player = document.getElementById('videoPlayer');
+            player.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+        }
 
-    async function ytSearch(q='arijit singh'){
-      results.innerHTML = '<div class="text-gray-400">Loading...</div>';
-      try{
-        const endpoint = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=24&q=${encodeURIComponent(q)}&key=${API_KEY}`;
-        const res = await fetch(endpoint);
-        const data = await res.json();
-        if(data.error){ results.innerHTML = '<div class="text-red-400">YouTube API error: '+ (data.error.message||'') +'</div>'; return; }
-        renderResults(data.items || []);
-      }catch(err){ console.error(err); results.innerHTML = '<div class="text-red-400">Failed to fetch</div>'; }
-    }
+        function selectPreference(genre) {
+            localStorage.setItem('userPreferences', genre);
+            document.getElementById('preferencesOverlay').style.display = 'none';
+            searchYouTube(genre);
+        }
 
-    function renderResults(items){
-      if(!items.length){ results.innerHTML = '<div class="text-gray-400">No results</div>'; return; }
-      results.innerHTML = '';
-      items.forEach(it=>{
-        const videoId = it.id.videoId;
-        const title = it.snippet.title;
-        const channel = it.snippet.channelTitle;
-        const thumb = it.snippet.thumbnails?.high?.url || it.snippet.thumbnails?.default?.url;
-
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-          <img src="${thumb}" class="w-full rounded-md" />
-          <div class="mt-2 font-semibold text-sm">${escapeHtml(title)}</div>
-          <div class="text-xs text-gray-400">${escapeHtml(channel)}</div>
-          <div class="mt-2 flex items-center justify-between">
-            <button class="play-btn" data-id="${videoId}" data-thumb="${thumb}" data-title="${escapeHtml(title)}" data-channel="${escapeHtml(channel)}">Play</button>
-            <button class="text-xs text-gray-300 lyrics-small" data-title="${encodeURIComponent(title)}" data-channel="${encodeURIComponent(channel)}">Lyrics</button>
-          </div>
-        `;
-        results.appendChild(card);
-      });
-    }
-
-    function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
-    // Play logic
-    document.addEventListener('click', e=>{
-      const p = e.target.closest('button.play-btn');
-      if(p){
-        const vid = p.dataset.id;
-        const title = p.dataset.title;
-        const channel = p.dataset.channel;
-        const thumb = p.dataset.thumb;
-        openPlayer(vid, title, channel, thumb);
-      }
-      const lbtn = e.target.closest('button.lyrics-small');
-      if(lbtn){
-        const title = decodeURIComponent(lbtn.dataset.title);
-        const channel = decodeURIComponent(lbtn.dataset.channel);
-        showLyrics(title, channel);
-      }
-    });
-
-    const playerModal = document.getElementById('playerModal');
-    const ytplayer = document.getElementById('ytplayer');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalArtist = document.getElementById('modalArtist');
-    const closeModal = document.getElementById('closeModal');
-    const lyricsBox = document.getElementById('lyricsBox');
-    const lyricsBtn = document.getElementById('lyricsBtn');
-    const openYoutube = document.getElementById('openYoutube');
-    const playerBar = document.getElementById('playerBar');
-    const barTitle = document.getElementById('barTitle');
-    const barArtist = document.getElementById('barArtist');
-    const barArt = document.getElementById('barArt');
-    const openPlayerBtn = document.getElementById('openPlayerBtn');
-
-    function openPlayer(videoId, title, channel, thumb){
-      modalTitle.innerText = title;
-      modalArtist.innerText = channel;
-      ytplayer.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
-      openYoutube.href = `https://www.youtube.com/watch?v=${videoId}`;
-      lyricsBox.style.display = 'none';
-      playerModal.style.display = 'flex';
-
-      // update bottom bar
-      barTitle.innerText = title;
-      barArtist.innerText = channel;
-      barArt.src = thumb;
-      playerBar.style.display = 'flex';
-
-      // save current to localStorage so state persists
-      localStorage.setItem('gratis_current', JSON.stringify({videoId, title, channel, thumb}));
-    }
-
-    closeModal.addEventListener('click', ()=>{
-      ytplayer.src = '';
-      playerModal.style.display = 'none';
-    });
-
-    openPlayerBtn.addEventListener('click', ()=>{
-      // open the modal (bring up player)
-      const cur = JSON.parse(localStorage.getItem('gratis_current')||'null');
-      if(cur) openPlayer(cur.videoId, cur.title, cur.channel, cur.thumb);
-    });
-
-    // Lyrics via lyrics.ovh (best-effort)
-    async function showLyrics(title, artist){
-      lyricsBox.innerHTML = 'Loading lyrics...';
-      lyricsBox.style.display = 'block';
-      const t = title.replace(/.*/,'').split(' - ')[0];
-      try{
-        const res = await fetch(`https://api.lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(t)}`);
-        const data = await res.json();
-        if(data && data.lyrics){ lyricsBox.innerText = data.lyrics; }
-        else { lyricsBox.innerText = 'Lyrics not found.'; }
-      }catch(e){ lyricsBox.innerText = 'Lyrics fetch failed.'; }
-    }
-
-    lyricsBtn.addEventListener('click', ()=>{ if(lyricsBox.style.display==='block') lyricsBox.style.display='none'; else lyricsBox.style.display='block'; });
-
-    // search on enter
-    searchInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ ytSearch(searchInput.value); } });
-    // initial search
-    ytSearch('arijit singh');
-
-    // restore last state (if any)
-    (function(){
-      const cur = JSON.parse(localStorage.getItem('gratis_current')||'null');
-      if(cur){ barTitle.innerText = cur.title; barArtist.innerText = cur.channel; barArt.src = cur.thumb; playerBar.style.display = 'flex'; }
-    })();
-
-    // register service worker
-    if('serviceWorker' in navigator){ navigator.serviceWorker.register('/service-worker.js').then(()=>console.log('sw registered')).catch(()=>{}); }
-  </script></body>
-</html><!-- ========================= manifest.json ========================= -->{ "short_name": "Gratis", "name": "Gratis - Free Music & Lyrics", "icons": [ { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }, { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" } ], "start_url": ".", "display": "standalone", "theme_color": "#121212", "background_color": "#000000" }
-
-<!-- ========================= service-worker.js ========================= -->// Basic caching service worker const CACHE_NAME = 'gratis-cache-v1'; const urlsToCache = ['/', '/index.html'];
-
-self.addEventListener('install', event => { event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache)).then(self.skipWaiting())); });
-
-self.addEventListener('activate', event => { event.waitUntil(self.clients.claim()); });
-
-self.addEventListener('fetch', event => { event.respondWith(caches.match(event.request).then(response => response || fetch(event.request))); });
+        // Run this when the page loads
+        window.onload = function() {
+            const savedPreference = localStorage.getItem('userPreferences');
+            if (!savedPreference) {
+                // If it's the first visit, show the preference selection
+                document.getElementById('preferencesOverlay').style.display = 'flex';
+            } else {
+                // If the user has visited before, search for their saved preference
+                searchYouTube(savedPreference);
+            }
+        };
+    </script>
+</body>
+</html>
