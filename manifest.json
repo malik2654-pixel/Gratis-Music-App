@@ -1,6 +1,4 @@
-{
-  "name": "Gratis - Free Music & Lyrics",
-  "short_name": "Gratis",
+short_name": "Gratis",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#000000",
