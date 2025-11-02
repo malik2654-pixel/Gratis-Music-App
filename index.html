@@ -3,174 +3,279 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gratis Music</title>
+    <title>Gratis</title>
     <link rel="manifest" href="manifest.json">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --yt-black: #0f0f0f;
-            --yt-dark-grey: #222222;
-            --yt-light-grey: #3f3f3f;
-            --yt-text-primary: #ffffff;
-            --yt-text-secondary: #aaaaaa;
+            --bg-color: #121212;
+            --card-color: #1a1a1a;
+            --primary-text: #ffffff;
+            --secondary-text: #b3b3b3;
+            --accent-color: #1DB954;
         }
         body {
-            font-family: 'Roboto', sans-serif;
-            background-color: var(--yt-black);
-            color: var(--yt-text-primary);
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--primary-text);
             margin: 0;
+            padding-bottom: 80px; /* Space for Now Playing */
         }
         .main-content {
             padding: 20px;
         }
-        .video-container {
-            position: relative;
-            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
-            height: 0;
-            background-color: #000;
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: 20px;
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
         }
-        .video-container iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        .header h1 {
+            font-size: 2.5em;
+            margin: 0;
+            color: var(--accent-color);
+        }
+        .header p {
+            font-size: 1em;
+            color: var(--secondary-text);
+            margin: 5px 0 0;
+        }
+        .search-container {
+            position: relative;
+            margin-bottom: 30px;
         }
         .search-bar {
             width: 100%;
             box-sizing: border-box;
-            background-color: var(--yt-dark-grey);
-            border: 1px solid var(--yt-light-grey);
-            border-radius: 20px;
-            padding: 12px 15px;
-            color: var(--yt-text-primary);
-            font-size: 1.1em;
+            background-color: var(--card-color);
+            border: 1px solid #333;
+            border-radius: 50px;
+            padding: 15px 20px;
+            color: var(--primary-text);
+            font-size: 1em;
+        }
+        .section-title {
+            font-size: 1.5em;
+            font-weight: 600;
             margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .settings-icon {
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
         }
         .song-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 15px;
         }
         .song-card {
-            background-color: var(--yt-dark-grey);
-            padding: 10px;
+            background-color: var(--card-color);
             border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .song-card:hover {
-            background-color: var(--yt-light-grey);
+            overflow: hidden;
         }
         .song-card img {
             width: 100%;
-            border-radius: 4px;
             aspect-ratio: 1 / 1;
+            object-fit: cover;
+        }
+        .song-info {
+            padding: 10px;
         }
         .song-title {
-            font-weight: 500;
+            font-weight: 600;
             font-size: 0.9em;
-            margin: 10px 0 5px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            margin: 0;
         }
         .song-channel {
             font-size: 0.8em;
-            color: var(--yt-text-secondary);
+            color: var(--secondary-text);
+            margin-top: 4px;
         }
+        .preferences-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .genre-buttons {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        .genre-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+        #player-container {
+            position: sticky;
+            bottom: 10px;
+            margin: 0 10px;
+            z-index: 99;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
+        }
+        #player { height: 100px; }
     </style>
 </head>
 <body>
-    <main class="main-content">
-        <div class="video-container">
-            <div id="player"></div>
+
+    <div id="preferencesOverlay" style="display: none;">
+        <h1>Gratis</h1>
+        <p>feel free to use</p>
+        <div class="genre-buttons">
+            <button class="genre-btn" onclick="selectPreference('Trending English Songs 2025')">English</button>
+            <button class="genre-btn" onclick="selectPreference('Trending Hindi Songs 2025')">Hindi</button>
+            <button class="genre-btn" onclick="selectPreference('Latest Bollywood Songs 2025')">Bollywood</button>
         </div>
-        <input type="text" id="searchBar" class="search-bar" placeholder="Search for music...">
-        <div id="songGrid" class="song-grid">
-            <!-- Song cards will be generated by JavaScript -->
+    </div>
+
+    <main class="main-content" id="mainContent" style="display: none;">
+        <div class="header">
+            <h1>Gratis</h1>
+        </div>
+        <div class="search-container">
+            <input type="text" id="searchBar" class="search-bar" placeholder="What do you want to listen to?">
+        </div>
+        
+        <div class="section-title">
+            <span id="resultsTitle">Trending</span>
+            <svg class="settings-icon" onclick="showPreferenceModal()" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.44,0.17-0.48,0.41L9.22,5.25C8.63,5.49,8.1,5.81,7.6,6.19L5.21,5.23C4.99,5.16,4.74,5.22,4.62,5.44l-1.92,3.32C2.59,9,2.64,9.27,2.82,9.41l2.03,1.58C4.8,11.36,4.78,11.68,4.78,12c0,0.32,0.02,0.64,0.07,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.38,2.44c0.04,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.48-0.41l0.38-2.44c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+        </div>
+        <div id="songGrid" class="song-grid"></div>
+        
+        <div id="relatedSection" style="display:none;">
+            <h2 class="section-title">Similar Songs</h2>
+            <div id="relatedGrid" class="song-grid"></div>
         </div>
     </main>
 
+    <div id="player-container">
+        <div id="player"></div>
+    </div>
+    
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
         const apiKey = 'AIzaSyANPsMp-6jzO3wectka_kmhQCuevFE0Nyw'; // *** IMPORTANT: REPLACE WITH YOUR API KEY ***
-
+        
         const songGrid = document.getElementById('songGrid');
+        const relatedGrid = document.getElementById('relatedGrid');
+        const relatedSection = document.getElementById('relatedSection');
         const searchBar = document.getElementById('searchBar');
+        const resultsTitle = document.getElementById('resultsTitle');
+        const mainContent = document.getElementById('mainContent');
+        const preferencesOverlay = document.getElementById('preferencesOverlay');
         let player;
 
-        // This function creates an <iframe> (and YouTube player)
-        // after the API code downloads.
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
-                height: '100%',
+                height: '100',
                 width: '100%',
-                videoId: '', // Start with no video
-                playerVars: {
-                    'playsinline': 1
-                },
-                events: {
-                    'onReady': onPlayerReady
-                }
+                playerVars: { 'playsinline': 1, 'controls': 0, 'modestbranding': 1 },
+                events: { 'onReady': onPlayerReady }
             });
         }
 
-        // The API will call this function when the video player is ready.
         function onPlayerReady(event) {
-            // We can now use the player.
-            // Let's start by searching for some default music.
-            fetchAndDisplay('latest hits');
+            const savedPreference = localStorage.getItem('userPreference');
+            if (!savedPreference) {
+                showPreferenceModal();
+            } else {
+                mainContent.style.display = 'block';
+                fetchSongs(savedPreference, 'Trending');
+            }
         }
 
-        function fetchAndDisplay(query) {
-            fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=12&q=${query}&type=video&key=${apiKey}`)
+        function fetchSongs(query, title) {
+            resultsTitle.textContent = title;
+            fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${query}&type=video&videoCategoryId=10&key=${apiKey}`)
+                .then(response => response.json())
+                .then(data => displaySongs(data, songGrid))
+                .catch(error => console.error('API Error:', error));
+        }
+
+        function fetchRelatedSongs(videoId) {
+            fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10&relatedToVideoId=${videoId}&type=video&key=${apiKey}`)
                 .then(response => response.json())
                 .then(data => {
-                    songGrid.innerHTML = '';
-                    if (data.items) {
-                        data.items.forEach(item => {
-                            const song = {
-                                videoId: item.id.videoId,
-                                title: item.snippet.title,
-                                channel: item.snippet.channelTitle,
-                                thumbnail: item.snippet.thumbnails.high.url
-                            };
-                            const card = document.createElement('div');
-                            card.className = 'song-card';
-                            card.onclick = () => playSong(song);
-                            card.innerHTML = `
-                                <img src="${song.thumbnail}" alt="Thumbnail">
-                                <p class="song-title">${song.title}</p>
-                                <p class="song-channel">${song.channel}</p>
-                            `;
-                            songGrid.appendChild(card);
-                        });
-                    }
-                }).catch(error => console.error('API Error:', error));
+                    relatedSection.style.display = 'block';
+                    displaySongs(data, relatedGrid);
+                })
+                .catch(error => console.error('Related API Error:', error));
+        }
+        
+        function displaySongs(data, gridElement) {
+            gridElement.innerHTML = '';
+            if (data.items) {
+                data.items.forEach(item => {
+                    if (!item.id.videoId) return;
+                    const song = {
+                        videoId: item.id.videoId,
+                        title: item.snippet.title,
+                        channel: item.snippet.channelTitle,
+                        thumbnail: item.snippet.thumbnails.high.url
+                    };
+                    const card = document.createElement('div');
+                    card.className = 'song-card';
+                    card.onclick = () => playSong(song);
+                    card.innerHTML = `<img src="${song.thumbnail}" alt="Thumbnail"><div class="song-info"><p class="song-title">${song.title}</p><p class="song-channel">${song.channel}</p></div>`;
+                    gridElement.appendChild(card);
+                });
+            }
         }
 
         function playSong(song) {
-            // A user clicking a song is a valid user interaction,
-            // so the browser will allow this to play with sound.
             player.loadVideoById(song.videoId);
             player.playVideo();
+            fetchRelatedSongs(song.videoId);
+            localStorage.setItem('lastPlayedArtist', song.channel);
+        }
+
+        function selectPreference(genre) {
+            localStorage.setItem('userPreference', genre);
+            preferencesOverlay.style.display = 'none';
+            mainContent.style.display = 'block';
+            fetchSongs(genre, 'Trending');
+        }
+        
+        function showPreferenceModal() {
+            preferencesOverlay.style.display = 'flex';
+            mainContent.style.display = 'none';
         }
 
         searchBar.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && searchBar.value) {
-                fetchAndDisplay(searchBar.value);
+                fetchSongs(searchBar.value, `Results for "${searchBar.value}"`);
+                relatedSection.style.display = 'none';
             }
         });
         
-        // Register Service Worker
         if ('serviceWorker' in navigator) {
-          window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/service-worker.js');
-          });
+            window.addEventListener('load', () => navigator.serviceWorker.register('/service-worker.js'));
         }
     </script>
 </body>
