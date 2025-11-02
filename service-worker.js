@@ -1,4 +1,4 @@
-// Gratis App Service Worker
+/ Gratis App Service Worker
 const CACHE_NAME = "gratis-cache-v1";
 const urlsToCache = [
   "./",
