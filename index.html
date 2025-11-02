@@ -5,275 +5,198 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gratis</title>
     <link rel="manifest" href="manifest.json">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&family=Roboto:wght@400&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-color: #121212;
-            --card-color: #1a1a1a;
-            --primary-text: #ffffff;
-            --secondary-text: #b3b3b3;
-            --accent-color: #1DB954;
-        }
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--primary-text);
-            margin: 0;
-            padding-bottom: 80px; /* Space for Now Playing */
-        }
-        .main-content {
-            padding: 20px;
-        }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .header h1 {
-            font-size: 2.5em;
-            margin: 0;
-            color: var(--accent-color);
-        }
-        .header p {
-            font-size: 1em;
-            color: var(--secondary-text);
-            margin: 5px 0 0;
-        }
-        .search-container {
-            position: relative;
-            margin-bottom: 30px;
-        }
-        .search-bar {
-            width: 100%;
-            box-sizing: border-box;
-            background-color: var(--card-color);
-            border: 1px solid #333;
-            border-radius: 50px;
-            padding: 15px 20px;
-            color: var(--primary-text);
-            font-size: 1em;
-        }
-        .section-title {
-            font-size: 1.5em;
-            font-weight: 600;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .settings-icon {
-            cursor: pointer;
-            width: 24px;
-            height: 24px;
-        }
-        .song-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-        }
-        .song-card {
-            background-color: var(--card-color);
-            border-radius: 8px;
-            cursor: pointer;
-            overflow: hidden;
-        }
-        .song-card img {
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            object-fit: cover;
-        }
-        .song-info {
-            padding: 10px;
-        }
-        .song-title {
-            font-weight: 600;
-            font-size: 0.9em;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin: 0;
-        }
-        .song-channel {
-            font-size: 0.8em;
-            color: var(--secondary-text);
-            margin-top: 4px;
-        }
-        .preferences-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            text-align: center;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        .genre-buttons {
-            margin-top: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            justify-content: center;
-        }
-        .genre-btn {
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 50px;
-            cursor: pointer;
-            font-size: 1.1em;
-            font-weight: 600;
-        }
-        #player-container {
-            position: sticky;
-            bottom: 10px;
-            margin: 0 10px;
-            z-index: 99;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
-        }
-        #player { height: 100px; }
+        :root { --bg: #000; --primary: #fff; --secondary: #aaa; --accent: #1DB954; --card: #181818; }
+        body { font-family: 'Roboto', sans-serif; background-color: var(--bg); color: var(--primary); margin: 0; }
+        #splashScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: flex; justify-content: center; align-items: center; z-index: 2000; transition: opacity 0.5s; }
+        #splashScreen h1 { font-family: 'Montserrat', sans-serif; font-size: 3rem; color: var(--accent); }
+        #preferencesOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 1500; text-align: center; padding: 20px; box-sizing: border-box; }
+        #preferencesOverlay h2 { font-family: 'Montserrat', sans-serif; }
+        .genre-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+        .genre-tag { background: var(--card); border: 1px solid var(--card); padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .genre-tag.selected { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: bold; }
+        .btn { background-color: var(--accent); color: var(--primary); border: none; padding: 15px 30px; border-radius: 50px; cursor: pointer; font-size: 1rem; font-weight: bold; }
+        .btn:disabled { background-color: #555; cursor: not-allowed; }
+        #mainContent { padding: 20px; }
+        #mainContent h1 { font-family: 'Montserrat', sans-serif; }
+        .song-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+        .song-card { cursor: pointer; }
+        .song-card img { width: 100%; border-radius: 8px; aspect-ratio: 1/1; object-fit: cover; }
+        .song-card p { margin: 8px 0 0; font-size: 0.9rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #player-section { position: sticky; bottom: 0; background: #121212; padding: 10px; border-top: 1px solid #282828; }
+        #player-ui { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        #player-controls, #extra-controls { display: flex; align-items: center; justify-content: center; gap: 20px; }
+        .control-btn { background: none; border: none; cursor: pointer; }
+        #video-container { width: 100%; transition: height 0.3s; height: 200px; }
+        #player { width: 100%; height: 100%; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(22px); }
     </style>
 </head>
 <body>
 
-    <div id="preferencesOverlay" style="display: none;">
+    <div id="splashScreen"><h1>Gratis</h1></div>
+
+    <div id="preferencesOverlay">
+        <h2>What is your Taste</h2>?</h2>
+        <p>Choose atleast three.</p>
+        <div id="genreGrid" class="genre-grid"></div>
+        <button id="submitPreferences" class="btn" disabled>Done</button>
+    </div>
+
+    <main id="mainContent" style="display: none;">
         <h1>Gratis</h1>
-        <p>feel free to use</p>
-        <div class="genre-buttons">
-            <button class="genre-btn" onclick="selectPreference('Trending English Songs 2025')">English</button>
-            <button class="genre-btn" onclick="selectPreference('Trending Hindi Songs 2025')">Hindi</button>
-            <button class="genre-btn" onclick="selectPreference('Latest Bollywood Songs 2025')">Bollywood</button>
-        </div>
-    </div>
-
-    <main class="main-content" id="mainContent" style="display: none;">
-        <div class="header">
-            <h1>Gratis</h1>
-        </div>
-        <div class="search-container">
-            <input type="text" id="searchBar" class="search-bar" placeholder="What do you want to listen to?">
-        </div>
-        
-        <div class="section-title">
-            <span id="resultsTitle">Trending</span>
-            <svg class="settings-icon" onclick="showPreferenceModal()" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84c-0.24,0-0.44,0.17-0.48,0.41L9.22,5.25C8.63,5.49,8.1,5.81,7.6,6.19L5.21,5.23C4.99,5.16,4.74,5.22,4.62,5.44l-1.92,3.32C2.59,9,2.64,9.27,2.82,9.41l2.03,1.58C4.8,11.36,4.78,11.68,4.78,12c0,0.32,0.02,0.64,0.07,0.94l-2.03,1.58c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.38,2.44c0.04,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.48-0.41l0.38-2.44c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
-        </div>
-        <div id="songGrid" class="song-grid"></div>
-        
-        <div id="relatedSection" style="display:none;">
-            <h2 class="section-title">Similar Songs</h2>
-            <div id="relatedGrid" class="song-grid"></div>
-        </div>
+        <div id="homeContent"></div>
     </main>
-
-    <div id="player-container">
-        <div id="player"></div>
-    </div>
     
+    <section id="player-section" style="display:none;">
+        <div id="video-container"><div id="player"></div></div>
+        <div id="player-ui">
+            <div id="player-controls">
+                <button class="control-btn" onclick="seek(-10)"><svg height="24" viewBox="0 0 24 24" fill="#fff"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6l-8.5 6z"/></svg></button>
+                <button class="control-btn" id="playPauseBtn"><svg height="36" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></button>
+                <button class="control-btn" onclick="seek(10)"><svg height="24" viewBox="0 0 24 24" fill="#fff"><path d="m18 6-8.5 6 8.5 6V6zm-2 12h-2V6h2v12z"/></svg></button>
+            </div>
+            <div id="extra-controls">
+                <span>Video</span>
+                <label class="switch"><input type="checkbox" id="videoToggle" checked onchange="toggleVideo()"><span class="slider"></span></label>
+                <span>Autoplay</span>
+                <label class="switch"><input type="checkbox" id="autoplayToggle" checked><span class="slider"></span></label>
+            </div>
+        </div>
+    </section>
+
     <script src="https://www.youtube.com/iframe_api"></script>
     <script>
-        const apiKey = 'AIzaSyANPsMp-6jzO3wectka_kmhQCuevFE0Nyw'; // *** IMPORTANT: REPLACE WITH YOUR API KEY ***
+        const apiKey = 'YOUR_API_KEY_HERE'; // *** IMPORTANT: REPLACE WITH YOUR API KEY ***
         
-        const songGrid = document.getElementById('songGrid');
-        const relatedGrid = document.getElementById('relatedGrid');
-        const relatedSection = document.getElementById('relatedSection');
-        const searchBar = document.getElementById('searchBar');
-        const resultsTitle = document.getElementById('resultsTitle');
-        const mainContent = document.getElementById('mainContent');
-        const preferencesOverlay = document.getElementById('preferencesOverlay');
         let player;
+        let currentPlaylist = [];
+        let currentSongIndex = 0;
+        const genres = ['English Pop', 'Bollywood Hits', 'Punjabi Hits', 'Lofi Hip Hop', 'Indie India', 'Workout Music', 'Sad Songs Hindi', 'Romantic Songs'];
 
+        // --- Core Functions ---
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('player', {
-                height: '100',
-                width: '100%',
-                playerVars: { 'playsinline': 1, 'controls': 0, 'modestbranding': 1 },
-                events: { 'onReady': onPlayerReady }
+                height: '100%', width: '100%',
+                playerVars: { 'playsinline': 1, 'controls': 0, 'modestbranding': 1, 'rel': 0 },
+                events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange }
             });
         }
 
-        function onPlayerReady(event) {
-            const savedPreference = localStorage.getItem('userPreference');
-            if (!savedPreference) {
-                showPreferenceModal();
-            } else {
-                mainContent.style.display = 'block';
-                fetchSongs(savedPreference, 'Trending');
+        function onPlayerReady() {
+            setTimeout(() => {
+                document.getElementById('splashScreen').style.opacity = '0';
+                setTimeout(() => document.getElementById('splashScreen').style.display = 'none', 500);
+                
+                const prefs = localStorage.getItem('userPreferences');
+                if (!prefs) {
+                    initPreferences();
+                } else {
+                    document.getElementById('mainContent').style.display = 'block';
+                    loadHomePage(JSON.parse(prefs));
+                }
+            }, 1500);
+        }
+
+        function onPlayerStateChange(event) {
+            const playIcon = '<svg height="36" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>';
+            const pauseIcon = '<svg height="36" viewBox="0 0 24 24" fill="#fff"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+            document.getElementById('playPauseBtn').innerHTML = event.data === YT.PlayerState.PLAYING ? pauseIcon : playIcon;
+
+            if (event.data === YT.PlayerState.ENDED && document.getElementById('autoplayToggle').checked) {
+                currentSongIndex++;
+                if (currentSongIndex < currentPlaylist.length) {
+                    playSong(currentPlaylist[currentSongIndex]);
+                }
             }
-        }
-
-        function fetchSongs(query, title) {
-            resultsTitle.textContent = title;
-            fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&q=${query}&type=video&videoCategoryId=10&key=${apiKey}`)
-                .then(response => response.json())
-                .then(data => displaySongs(data, songGrid))
-                .catch(error => console.error('API Error:', error));
-        }
-
-        function fetchRelatedSongs(videoId) {
-            fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=10&relatedToVideoId=${videoId}&type=video&key=${apiKey}`)
-                .then(response => response.json())
-                .then(data => {
-                    relatedSection.style.display = 'block';
-                    displaySongs(data, relatedGrid);
-                })
-                .catch(error => console.error('Related API Error:', error));
         }
         
-        function displaySongs(data, gridElement) {
-            gridElement.innerHTML = '';
-            if (data.items) {
-                data.items.forEach(item => {
-                    if (!item.id.videoId) return;
-                    const song = {
-                        videoId: item.id.videoId,
-                        title: item.snippet.title,
-                        channel: item.snippet.channelTitle,
-                        thumbnail: item.snippet.thumbnails.high.url
-                    };
-                    const card = document.createElement('div');
-                    card.className = 'song-card';
-                    card.onclick = () => playSong(song);
-                    card.innerHTML = `<img src="${song.thumbnail}" alt="Thumbnail"><div class="song-info"><p class="song-title">${song.title}</p><p class="song-channel">${song.channel}</p></div>`;
-                    gridElement.appendChild(card);
-                });
-            }
-        }
-
         function playSong(song) {
+            document.getElementById('player-section').style.display = 'block';
             player.loadVideoById(song.videoId);
             player.playVideo();
-            fetchRelatedSongs(song.videoId);
-            localStorage.setItem('lastPlayedArtist', song.channel);
+            // Create a playlist of related songs
+            fetchAndDisplay(`related to ${song.title} by ${song.channel}`, document.getElementById(`related-${song.videoId.substring(0,5)}`), 10, true);
         }
 
-        function selectPreference(genre) {
-            localStorage.setItem('userPreference', genre);
-            preferencesOverlay.style.display = 'none';
-            mainContent.style.display = 'block';
-            fetchSongs(genre, 'Trending');
+        // --- UI & Preferences ---
+        function initPreferences() {
+            const grid = document.getElementById('genreGrid');
+            genres.forEach(g => {
+                grid.innerHTML += `<div class="genre-tag" onclick="toggleGenre(this)">${g}</div>`;
+            });
+            document.getElementById('preferencesOverlay').style.display = 'flex';
+            document.getElementById('submitPreferences').onclick = () => {
+                const selected = Array.from(document.querySelectorAll('.genre-tag.selected')).map(el => el.textContent);
+                localStorage.setItem('userPreferences', JSON.stringify(selected));
+                document.getElementById('preferencesOverlay').style.display = 'none';
+                onPlayerReady();
+            };
         }
         
-        function showPreferenceModal() {
-            preferencesOverlay.style.display = 'flex';
-            mainContent.style.display = 'none';
+        function toggleGenre(el) {
+            el.classList.toggle('selected');
+            const selectedCount = document.querySelectorAll('.genre-tag.selected').length;
+            document.getElementById('submitPreferences').disabled = selectedCount < 3;
         }
 
-        searchBar.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && searchBar.value) {
-                fetchSongs(searchBar.value, `Results for "${searchBar.value}"`);
-                relatedSection.style.display = 'none';
+        function loadHomePage(preferences) {
+            const homeContent = document.getElementById('homeContent');
+            homeContent.innerHTML = '';
+            preferences.forEach(pref => {
+                homeContent.innerHTML += `<h2 class="section-title">${pref}</h2><div class="song-grid" id="grid-${pref.replace(/s+/g, '')}"></div>`;
+                fetchAndDisplay(pref, document.getElementById(`grid-${pref.replace(/s+/g, '')}`), 6);
+            });
+        }
+        
+        async function fetchAndDisplay(query, element, maxResults = 10, isRelated = false) {
+            try {
+                const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=${maxResults}&q=${query}&type=video&videoCategoryId=10&key=${apiKey}`);
+                const data = await response.json();
+                element.innerHTML = '';
+                if (data.items) {
+                    if(isRelated) currentPlaylist = [];
+                    data.items.forEach(item => {
+                        if (!item.id.videoId) return;
+                        const song = { videoId: item.id.videoId, title: item.snippet.title, channel: item.snippet.channelTitle, thumbnail: item.snippet.thumbnails.medium.url };
+                        if(isRelated) currentPlaylist.push(song);
+                        element.innerHTML += `
+                            <div class="song-card" onclick='playSong(${JSON.stringify(song)})'>
+                                <img src="${song.thumbnail}" alt="Thumbnail">
+                                <p>${song.title}</p>
+                            </div>
+                        `;
+                    });
+                    if(isRelated) element.innerHTML += `<div id="related-${song.videoId.substring(0,5)}"></div>`;
+                }
+            } catch (error) {
+                console.error('API Error:', error);
             }
-        });
+        }
+
+        // --- Player Controls ---
+        function togglePlay() {
+            const state = player.getPlayerState();
+            state === YT.PlayerState.PLAYING ? player.pauseVideo() : player.playVideo();
+        }
+        document.getElementById('playPauseBtn').onclick = togglePlay;
         
+        function seek(seconds) {
+            player.seekTo(player.getCurrentTime() + seconds, true);
+        }
+        
+        function toggleVideo() {
+            const container = document.getElementById('video-container');
+            container.style.height = document.getElementById('videoToggle').checked ? '200px' : '0px';
+        }
+
+        // --- Service Worker ---
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => navigator.serviceWorker.register('/service-worker.js'));
         }
