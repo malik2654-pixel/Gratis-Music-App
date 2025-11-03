@@ -1,18 +1,19 @@
 {
+  "name": "Gratis Music",
   "short_name": "Gratis",
-  "start_url": "/",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#000000",
-  "theme_color": "#1db954",
-  "orientation": "portrait",
+  "theme_color": "#000000",
+  "description": "Your personal music streaming app.",
   "icons": [
     {
-      "src": "https://i.ibb.co/F7RFGTF/gratis-icon.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://i.ibb.co/F7RFGTF/gratis-icon.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
