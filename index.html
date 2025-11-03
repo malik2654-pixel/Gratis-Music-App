@@ -29,7 +29,7 @@
         #player-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #282828; padding: 10px; box-sizing: border-box; }
         #player-container { height: 0; overflow: hidden; }
         .controls { display: flex; justify-content: space-around; align-items: center; }
-        .control-btn { background: none; border: none; fill: var(--primary); cursor: pointer; }
+        .control-btn { background: none; border: none; fill: var(--primary); cursor: pointer; color: var(--primary); font-weight: bold;}
     </style>
 </head>
 <body>
@@ -38,8 +38,8 @@
 
     <div id="app-container" class="container">
         <div id="preferences-screen" class="hidden">
-            <h2>[translat:Your Music Taste]</h2>
-            <p>[translate:Choose Atleast Three]</p>
+            <h2>What music do you like?</h2>
+            <p>Choose at least 3.</p>
             <div id="genre-options" class="genre-grid"></div>
             <button id="pref-submit-btn" class="submit-btn" disabled>Done</button>
         </div>
@@ -124,7 +124,7 @@
             },
 
             async fetchSongs(query, element, limit = 20) {
-                if (!this.apiKey || this.apiKey === 'AIzaSyANPsMp-6jzO3wectka_kmhQCuevFE0Nyw') {
+                if (!this.apiKey || this.apiKey === 'YOUR_API_KEY_HERE') {
                     element.innerHTML = "<p>Error: API Key is not configured.</p>";
                     return;
                 }
@@ -168,7 +168,14 @@
 
             togglePlay() {
                 if (this.player && typeof this.player.getPlayerState === 'function') {
-                    this.player.getPlayerState() === YT.PlayerState.PLAYING ? this.player.pauseVideo() : this.player.playVideo();
+                    const state = this.player.getPlayerState();
+                    if(state === YT.PlayerState.PLAYING) {
+                        this.player.pauseVideo();
+                        this.ui.playPause.textContent = 'Play';
+                    } else {
+                        this.player.playVideo();
+                        this.ui.playPause.textContent = 'Pause';
+                    }
                 }
             },
 
@@ -191,6 +198,12 @@
         };
 
         app.init();
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js').catch(err => console.log('Service worker registration failed:', err));
+            });
+        }
     </script>
 </body>
 </html>
